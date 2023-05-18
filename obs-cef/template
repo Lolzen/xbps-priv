@@ -1,0 +1,61 @@
+# Template file for 'obs-cef'
+pkgname=obs-cef
+version=29.1.1
+revision=1
+cefversion=5060
+archs="i686* x86_64* ppc64le* aarch64*"
+wrksrc="obs-studio-${version}"
+build_wrksrc="obs-studio-${version}"
+build_style=cmake
+configure_args="-DOBS_VERSION_OVERRIDE=${version} -DBUILD_BROWSER=ON -DBUILD_VST=OFF -DENABLE_AJA=OFF -DCEF_ROOT_DIR='../../cef_binary_5060_linux64' -DCALM_DEPRECATION=ON"
+hostmakedepends="git pkg-config swig python3-devel qt6-base nss-devel nspr-devel cmake ninja libcurl-devel"
+makedepends="LuaJIT-devel fdk-aac-devel ffmpeg-devel glu-devel jack-devel
+ libXcomposite-devel libcurl-devel libva-devel pulseaudio-devel python3-devel
+ speexdsp-devel v4l-utils-devel vlc-devel qt6-svg-devel x264-devel
+ mbedtls-devel jansson-devel wayland-devel pipewire-devel libxkbcommon-devel
+ pciutils-devel librist-devel srt-devel"
+depends="xset xdg-desktop-portal"
+short_desc="Open Broadcaster Software"
+conflicts="obs"
+maintainer="lemmi <lemmi@nerd2nerd.org>"
+license="GPL-2.0-or-later"
+homepage="https://obsproject.com"
+changelog="https://github.com/obsproject/obs-studio/releases"
+distfiles="https://github.com/obsproject/obs-studio/archive/${version}.tar.gz
+https://cdn-fastly.obsproject.com/downloads/cef_binary_${cefversion}_linux64.tar.bz2"
+checksum="9a37148449d715b3c7cc3e622c291aba9fa45bd354a39453b3e922eb558cf21e
+ac4e2a8ebf20700e4e36353e314f876623633dd5b474778a2548bb66bdbea11d"
+
+pre_configure() {
+	cd $wrksrc
+	rm -rf $wrksrc/obs-studio-${version}/plugins/obs-browser
+	rm -rf $wrksrc/obs-studio-${version}/plugins/obs-websocket
+	git clone https://github.com/obsproject/obs-browser -b 2.18.6 --recursive $wrksrc/obs-studio-${version}/plugins/obs-browser
+	git clone https://github.com/obsproject/obs-websocket -b 5.0.2 --recursive $wrksrc/obs-studio-${version}/plugins/obs-websocket
+	#git config submodule.plugins/obs-browser.url $wrksrc/obs-browser
+	#git submodule update
+	# it's not enough to use -DENABLE_BROWSER ...
+	touch $wrksrc/obs-studio-${version}/plugins/obs-browser/CMakeLists.txt
+	touch $wrksrc/obs-studio-${version}/plugins/obs-websocket/CMakeLists.txt
+}
+
+#do_configure() {
+#	cd $wrksrc
+#	git config submodule.plugins/obs-browser.url $srcdir/obs-browser
+#	git submodule update
+#}
+
+obs-cef-devel_package() {
+	short_desc+=" - development files"
+	depends="${sourcepkg}>=${version}_${revision}"
+	pkg_install() {
+		vmove usr/lib/libobs-frontend-api.so
+		vmove usr/lib/libobs-opengl.so
+		vmove usr/lib/libobs.so
+		vmove usr/lib/libobsglad.so
+		vmove usr/lib/libobs-scripting.so
+		vmove usr/include
+		vmove usr/lib/cmake
+		vmove usr/lib/pkgconfig
+	}
+}
